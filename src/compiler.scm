@@ -9,6 +9,7 @@
 (load "../tests/tests-1.1-req.scm")
 (load "../tests/tests-1.2-req.scm")
 (load "../tests/tests-1.3-req.scm")
+(load "../tests/tests-1.4-req.scm")
 
 ; scheme constants
 (define fx_shift       2)
@@ -97,6 +98,11 @@
     (check-primcall-args prim args)
     (apply (primitive-emitter prim) args)))
 
+(define (emit-csel-bool cond)
+  (emit "   mov w1, ~s" bool_t)
+  (emit "   mov w2, ~s" bool_f)
+  (emit "   csel w0, w1, w2, ~a" cond))
+
 (define-primitive ($fxadd1 arg)
   (emit-expr arg)
   (emit "   add w0, w0, ~s" (immediate-rep 1)))
@@ -113,11 +119,6 @@
 (define-primitive ($char->fixnum arg)
   (emit-expr arg)
   (emit "   lsr w0, w0, ~s" (- char_shift fx_shift)))
-
-(define (emit-csel-bool cond)
-  (emit "   mov w1, ~s" bool_t)
-  (emit "   mov w2, ~s" bool_f)
-  (emit "   csel w0, w1, w2, ~a" cond))
 
 (define-primitive (fixnum? arg)
   (emit-expr arg)
@@ -161,12 +162,42 @@
   (emit "   mvn w0, w0, lsr #~s" fx_shift)
   (emit "   lsl w0, w0, ~s" fx_shift))
 
+;;; conditional expressions ;;;
+
+(define unique-label
+    (let ([count 0])
+        (lambda ()
+            (let ([L (format "L_~s" count)])
+                (set! count (add1 count))
+                L))))
+
+(define (emit-if expr)
+    (let ([alt-label (unique-label)]
+          [end-label (unique-label)])
+    (emit-expr (if-test expr))
+    (move 1 bool_f)
+    (emit "   cmp x1, x0")
+    (emit "   B.eq ~a" alt-label)
+    (emit-expr (if-conseq expr))
+    (emit "   B ~a" end-label)
+    (emit "~a:" alt-label)
+    (emit-expr (if-altern expr))
+    (emit "~a:" end-label)))
+
+(define (if? expr)
+    (and (list? expr) (eq? (car expr) 'if)))
+
+(define (if-test expr) (cadr expr))
+(define (if-conseq expr) (caddr expr))
+(define (if-altern expr) (cadddr expr))
+
 ;;; program ;;;
 
 (define (emit-expr expr)
   (cond
     [(immediate? expr) (emit-immediate expr)]
     [(primcall? expr) (emit-primcall expr)]
+    [(if? expr) (emit-if expr)]
     [else (error 'emit-expr (format "~s is not an expression" expr))]))
 
 (define (emit-function-header f)
