@@ -158,7 +158,7 @@
   (emit "   subs wzr, w0, w2")
   (emit "   csel w0, w1, w2, eq"))
 
-(define-primitive (fxlognot si arg)
+(define-primitive ($fxlognot si arg)
   (emit-expr si arg)
   (emit "   mvn w0, w0, lsr #~s" fx_shift)
   (emit "   lsl w0, w0, ~s" fx_shift))
@@ -230,6 +230,11 @@
 (define-primitive (fxlogor si arg1 arg2)
     (stack-expr si arg1 arg2)
     (emit "   orr x0, x0, x1"))
+
+(define-primitive (fxlognot si arg)
+  (emit-expr si arg)
+  (emit "   mvn w0, w0, lsr #~s" fx_shift)
+  (emit "   lsl w0, w0, ~s" fx_shift))
 
 (define-primitive (fx= si arg1 arg2)
     (stack-expr si arg1 arg2)
