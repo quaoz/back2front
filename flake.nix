@@ -4,28 +4,26 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
   };
 
   outputs = {
     nixpkgs,
-    flake-utils,
+    systems,
     ...
-  }:
-    flake-utils.lib.eachDefaultSystem (
-      system: let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in {
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            chez
-            gcc
-            just
-          ];
-        };
-      }
-    );
+  }: let
+    forAllSystems = function:
+      nixpkgs.lib.genAttrs (import systems) (
+        system: function nixpkgs.legacyPackages.${system}
+      );
+  in {
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShellNoCC {
+        packages = with pkgs; [
+          chez
+          gcc
+          just
+        ];
+      };
+    });
+  };
 }
