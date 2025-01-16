@@ -1,4 +1,4 @@
-;;; unary primatives ;;;
+;;; unary primitives ;;;
 
 (define-syntax define-primitive
   (syntax-rules ()

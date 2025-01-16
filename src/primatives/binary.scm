@@ -1,4 +1,4 @@
-;;; binary primatives ;;;
+;;; binary primitives ;;;
 
 ; TODO: these push and pop implementations are wasteful as they store all values in a 16 byte slot, see below for possible improvements
 ; https://community.arm.com/arm-community-blogs/b/architectures-and-processors-blog/posts/using-the-stack-in-aarch64-implementing-push-and-pop
